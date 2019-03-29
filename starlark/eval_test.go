@@ -16,6 +16,8 @@ import (
 	"go.starlark.net/internal/chunkedfile"
 	"go.starlark.net/resolve"
 	"go.starlark.net/starlark"
+	"go.starlark.net/starlarkjson"
+	"go.starlark.net/starlarkstruct"
 	"go.starlark.net/starlarktest"
 	"go.starlark.net/syntax"
 )
@@ -112,6 +114,7 @@ func TestExecFile(t *testing.T) {
 		"testdata/float.star",
 		"testdata/function.star",
 		"testdata/int.star",
+		"testdata/json.star",
 		"testdata/list.star",
 		"testdata/misc.star",
 		"testdata/set.star",
@@ -125,6 +128,7 @@ func TestExecFile(t *testing.T) {
 			predeclared := starlark.StringDict{
 				"hasfields": starlark.NewBuiltin("hasfields", newHasFields),
 				"fibonacci": fib{},
+				"struct":    starlark.NewBuiltin("struct", starlarkstruct.Make),
 			}
 
 			setOptions(chunk.Source)
@@ -178,6 +182,9 @@ func (it *fibIterator) Done() {}
 func load(thread *starlark.Thread, module string) (starlark.StringDict, error) {
 	if module == "assert.star" {
 		return starlarktest.LoadAssertModule()
+	}
+	if module == "json.star" {
+		return starlark.StringDict{"json": starlarkjson.Module}, nil
 	}
 
 	// TODO(adonovan): test load() using this execution path.
