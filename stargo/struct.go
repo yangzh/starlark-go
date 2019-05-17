@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"sort"
 
+	"github.com/iancoleman/strcase"
 	"go.starlark.net/starlark"
 	"go.starlark.net/syntax"
 )
@@ -27,6 +28,7 @@ func (s goStruct) Truth() starlark.Bool   { return isZero(s.v) == false }
 func (s goStruct) Type() string           { return fmt.Sprintf("go.struct<%s>", s.v.Type()) }
 
 func (s goStruct) Attr(name string) (starlark.Value, error) {
+	name = strcase.ToCamel(name)
 	if m := s.v.MethodByName(name); m.IsValid() {
 		return goFunc{m}, nil
 	}
@@ -44,16 +46,16 @@ func (s goStruct) Attr(name string) (starlark.Value, error) {
 
 func (s goStruct) AttrNames() []string {
 	t := s.v.Type()
-	recv := t
+
+	var names []string
+	names = appendMethodNames(names, t)
+	names = appendFieldNames(names, t)
 	if s.v.CanAddr() {
 		// TODO: this isn't right but we may yet want to
 		// report the attrnames of *T since if f is in dir(lvalue),
 		// you can call lvalue.f(). Or maybe not.
-		recv = reflect.PtrTo(t)
+		names = appendMethodNames(names, reflect.PtrTo(t))
 	}
-	var names []string
-	names = appendMethodNames(names, recv)
-	names = appendFieldNames(names, t)
 	sort.Strings(names)
 	return names
 }

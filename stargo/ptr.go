@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"sort"
 
+	"github.com/iancoleman/strcase"
 	"go.starlark.net/starlark"
 	"go.starlark.net/syntax"
 )
@@ -46,6 +47,7 @@ func (p goPtr) Truth() starlark.Bool   { return p.v.IsNil() == false }
 func (p goPtr) Type() string           { return fmt.Sprintf("go.ptr<%s>", p.v.Type()) }
 
 func (p goPtr) Attr(name string) (starlark.Value, error) {
+	name = strcase.ToCamel(name)
 	v := p.v
 
 	// methods
@@ -82,6 +84,8 @@ func (p goPtr) SetField(name string, val starlark.Value) error {
 	if p.v.IsNil() {
 		return fmt.Errorf("nil dereference")
 	}
+
+	name = strcase.ToCamel(name)
 	if elem := p.v.Elem(); elem.Kind() == reflect.Struct {
 		if f := elem.FieldByName(name); f.CanSet() {
 			x, err := toGo(val, f.Type())

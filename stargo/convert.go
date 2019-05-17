@@ -8,6 +8,7 @@ import (
 	"sort"
 	"unsafe"
 
+	"github.com/iancoleman/strcase"
 	"go.starlark.net/starlark"
 )
 
@@ -305,6 +306,7 @@ func toGo(v starlark.Value, to reflect.Type) (reflect.Value, error) {
 // method implements the Attr method of all types except struct and
 // pointer (which may have fields too).
 func method(v reflect.Value, name string) (starlark.Value, error) {
+	name = strcase.ToCamel(name)
 	if m := v.MethodByName(name); m.IsValid() {
 		return goFunc{m}, nil
 	}
@@ -322,7 +324,7 @@ func methodNames(v reflect.Value) []string {
 
 func appendMethodNames(names []string, t reflect.Type) []string {
 	for i := 0; i < t.NumMethod(); i++ {
-		names = append(names, t.Method(i).Name)
+		names = append(names, strcase.ToSnake(t.Method(i).Name))
 	}
 	return names
 }
@@ -331,7 +333,10 @@ func appendFieldNames(names []string, t reflect.Type) []string {
 	if t.Kind() == reflect.Struct {
 		// includes promoted fields
 		for i := 0; i < t.NumField(); i++ {
-			names = append(names, t.Field(i).Name)
+			fs := t.Field(i)
+			if 'A' <= fs.Name[0] && fs.Name[0] <= 'Z' { // Only include exported fields.
+				names = append(names, strcase.ToSnake(t.Field(i).Name))
+			}
 		}
 	}
 	return names
